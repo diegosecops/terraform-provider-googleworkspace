@@ -33,7 +33,7 @@ jobs:
           GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -o bin/terraform-provider-googleworkspace_${{ matrix.goos }}_${{ matrix.goarch }}${EXT}
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: terraform-provider-googleworkspace-${{ matrix.goos }}-${{ matrix.goarch }}
           path: bin/*
@@ -47,7 +47,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Download artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           path: bin
 
