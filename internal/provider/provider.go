@@ -116,7 +116,7 @@ func New(version string) func() *schema.Provider {
 				},
 			},
 			DataSourcesMap: map[string]*schema.Resource{
-				"googleworkspace_chrome_policy_schema": dataSourceChromePolicySchema(),
+				// "googleworkspace_chrome_policy_schema": dataSourceChromePolicySchema(),
 				"googleworkspace_domain":               dataSourceDomain(),
 				"googleworkspace_domain_alias":         dataSourceDomainAlias(),
 				"googleworkspace_group":                dataSourceGroup(),
@@ -132,7 +132,7 @@ func New(version string) func() *schema.Provider {
 				"googleworkspace_users":                dataSourceUsers(),
 			},
 			ResourcesMap: map[string]*schema.Resource{
-				"googleworkspace_chrome_policy":       resourceChromePolicy(),
+				// "googleworkspace_chrome_policy":       resourceChromePolicy(),
 				"googleworkspace_domain":              resourceDomain(),
 				"googleworkspace_domain_alias":        resourceDomainAlias(),
 				"googleworkspace_gmail_send_as_alias": resourceGmailSendAsAlias(),
