@@ -27,7 +27,7 @@ func TestAccResourceSchema_basic(t *testing.T) {
 				ResourceName:            "googleworkspace_schema.my-schema",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"etag", "fields.0.etag"},
+				ImportStateVerifyIgnore: []string{"etag", "fields.*.etag"},
 			},
 		},
 	})
@@ -49,7 +49,7 @@ func TestAccResourceSchema_full(t *testing.T) {
 				ResourceName:            "googleworkspace_schema.my-schema",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"etag", "fields.0.etag", "fields.1.etag", "fields.2.etag"},
+				ImportStateVerifyIgnore: []string{"etag", "fields.*.etag"},
 			},
 			{
 				Config: testAccResourceSchema_fullUpdate(schemaName),
@@ -58,7 +58,7 @@ func TestAccResourceSchema_full(t *testing.T) {
 				ResourceName:            "googleworkspace_schema.my-schema",
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"etag", "fields.0.etag", "fields.1.etag", "fields.2.etag"},
+				ImportStateVerifyIgnore: []string{"etag", "fields.*.etag"},
 			},
 		},
 	})

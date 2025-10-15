@@ -51,7 +51,7 @@ func resourceSchema() *schema.Resource {
 			},
 			"fields": {
 				Description: "A list of fields in the schema.",
-				Type:        schema.TypeList,
+				Type:        schema.TypeSet,
 				Required:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -106,45 +106,37 @@ func resourceSchema() *schema.Resource {
 						},
 						"read_access_type": {
 							Description: "Specifies who can view values of this field. " +
-								"See Retrieve users as a non-administrator for more information. " +
-								"Acceptable values are: " +
-								"\n\t- `ADMINS_AND_SELF`" +
-								"\n\t- `ALL_DOMAIN_USERS`" +
-								"\n\t" +
-								"Note: It may take up to 24 hours for changes to this field to be reflected.",
+								"Acceptable values are: `ADMINS_AND_SELF` or `ALL_DOMAIN_USERS`.",
 							Type:             schema.TypeString,
 							Optional:         true,
 							Default:          "ALL_DOMAIN_USERS",
 							ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{"ADMINS_AND_SELF", "ALL_DOMAIN_USERS"}, true)),
 						},
-						// TODO: (mbang) AtLeastOneOf (https://github.com/hashicorp/terraform-plugin-sdk/issues/470)
 						"numeric_indexing_spec": {
-							Description: "Indexing spec for a numeric field. By default, " +
-								"only exact match queries will be supported for numeric fields. " +
-								"Setting the numericIndexingSpec allows range queries to be supported.",
-							Type:     schema.TypeList,
-							MaxItems: 1,
-							Optional: true,
+							Description: "Indexing spec for numeric fields.",
+							Type:        schema.TypeList,
+							MaxItems:    1,
+							Optional:    true,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
 									"min_value": {
-										Description: "Minimum value of this field. This is meant to be indicative " +
-											"rather than enforced. Values outside this range will still be indexed, " +
-											"but search may not be as performant.",
-										Type:     schema.TypeFloat,
-										Optional: true,
+										Description: "Minimum value of this field.",
+										Type:        schema.TypeFloat,
+										Optional:    true,
 									},
 									"max_value": {
-										Description: "Maximum value of this field. This is meant to be indicative " +
-											"rather than enforced. Values outside this range will still be indexed, " +
-											"but search may not be as performant.",
-										Type:     schema.TypeFloat,
-										Optional: true,
+										Description: "Maximum value of this field.",
+										Type:        schema.TypeFloat,
+										Optional:    true,
 									},
 								},
 							},
 						},
 					},
+				},
+				Set: func(v interface{}) int {
+					m := v.(map[string]interface{})
+					return schema.HashString(m["field_name"].(string))
 				},
 			},
 			"display_name": {
