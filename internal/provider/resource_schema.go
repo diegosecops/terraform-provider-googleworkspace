@@ -344,27 +344,29 @@ func resourceSchemaDelete(ctx context.Context, d *schema.ResourceData, meta inte
 // Expand functions
 
 func expandFields(v interface{}) []*directory.SchemaFieldSpec {
-	fields := v.([]interface{})
+    set := v.(*schema.Set)
+    fields := set.List()
 
-	if len(fields) == 0 {
-		return nil
-	}
+    if len(fields) == 0 {
+        return nil
+    }
 
-	fieldObjs := []*directory.SchemaFieldSpec{}
+    fieldObjs := []*directory.SchemaFieldSpec{}
 
-	for _, field := range fields {
-		fieldObjs = append(fieldObjs, &directory.SchemaFieldSpec{
-			FieldName:           field.(map[string]interface{})["field_name"].(string),
-			FieldType:           field.(map[string]interface{})["field_type"].(string),
-			MultiValued:         field.(map[string]interface{})["multi_valued"].(bool),
-			Indexed:             expandNestedFieldsIndexed(field.(map[string]interface{})["indexed"]),
-			DisplayName:         field.(map[string]interface{})["display_name"].(string),
-			ReadAccessType:      field.(map[string]interface{})["read_access_type"].(string),
-			NumericIndexingSpec: expandNestedNumericIndexingSpec(field.(map[string]interface{})["numeric_indexing_spec"]),
-		})
-	}
+    for _, field := range fields {
+        m := field.(map[string]interface{})
+        fieldObjs = append(fieldObjs, &directory.SchemaFieldSpec{
+            FieldName:           m["field_name"].(string),
+            FieldType:           m["field_type"].(string),
+            MultiValued:         m["multi_valued"].(bool),
+            Indexed:             expandNestedFieldsIndexed(m["indexed"]),
+            DisplayName:         m["display_name"].(string),
+            ReadAccessType:      m["read_access_type"].(string),
+            NumericIndexingSpec: expandNestedNumericIndexingSpec(m["numeric_indexing_spec"]),
+        })
+    }
 
-	return fieldObjs
+    return fieldObjs
 }
 
 func expandNestedNumericIndexingSpec(v interface{}) *directory.SchemaFieldSpecNumericIndexingSpec {
