@@ -3,66 +3,93 @@ name: Release Terraform Provider
 on:
   push:
     tags:
-      - 'v*'  # Se dispara solo en tags que empiecen por "v"
+      - 'v*'
 
 permissions:
-  contents: write  # Necesario para crear releases y subir assets
+  contents: write
 
 jobs:
-  build:
-    name: Build Provider Binaries
+  build-and-release:
+    name: Build and Release Provider
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        goos: [linux, darwin, windows]
-        goarch: [amd64, arm64]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
           go-version: '1.21'
 
-      - name: Build provider
+      - name: Build all provider binaries
         run: |
-          mkdir -p bin
-          EXT=""
-          [[ "${{ matrix.goos }}" == "windows" ]] && EXT=".exe"
-          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -o bin/terraform-provider-googleworkspace_${{ matrix.goos }}_${{ matrix.goarch }}${EXT}
+          set -e
+          VERSION="${GITHUB_REF_NAME#v}"
+          NAME="googleworkspace"
+          mkdir -p release
 
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: terraform-provider-googleworkspace-${{ matrix.goos }}-${{ matrix.goarch }}
-          path: bin/*
+          PLATFORMS=(
+            "linux amd64"
+            "linux arm64"
+            "darwin amd64"
+            "darwin arm64"
+            "windows amd64"
+            "windows arm64"
+          )
 
-  release:
-    name: Create GitHub Release
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+          for platform in "${PLATFORMS[@]}"; do
+            OS=$(echo $platform | cut -d' ' -f1)
+            ARCH=$(echo $platform | cut -d' ' -f2)
+            EXT=""
+            [[ "$OS" == "windows" ]] && EXT=".exe"
 
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: bin
+            BINARY="terraform-provider-${NAME}_v${VERSION}${EXT}"
+            ZIPNAME="release/terraform-provider-${NAME}_${VERSION}_${OS}_${ARCH}.zip"
 
-      - name: Create Release
-        id: create_release
+            echo "Building $ZIPNAME..."
+            GOOS=$OS GOARCH=$ARCH go build -o "$BINARY"
+            zip -j "$ZIPNAME" "$BINARY"
+            rm "$BINARY"
+          done
+
+      - name: Create registry manifest
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          cat > "release/terraform-provider-googleworkspace_${VERSION}_manifest.json" <<EOF
+          {
+            "version": 1,
+            "metadata": {
+              "protocol_versions": ["6.0"]
+            }
+          }
+          EOF
+
+      - name: Generate SHA256SUMS
+        run: |
+          cd release
+          VERSION="${GITHUB_REF_NAME#v}"
+          shasum -a 256 * > terraform-provider-googleworkspace_${VERSION}_SHA256SUMS
+
+      - name: Import GPG key
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+        run: |
+          export GNUPGHOME="$RUNNER_TEMP/gnupg"
+          mkdir -p "$GNUPGHOME"
+          chmod 700 "$GNUPGHOME"
+          echo "$GPG_PRIVATE_KEY" | gpg --batch --import
+
+      - name: Sign SHA256SUMS (binary signature)
+        run: |
+          export GNUPGHOME="$RUNNER_TEMP/gnupg"
+          VERSION="${GITHUB_REF_NAME#v}"
+          gpg --batch --yes --detach-sign \
+            release/terraform-provider-googleworkspace_${VERSION}_SHA256SUMS
+
+      - name: Upload Release Assets
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ github.ref_name }}
-          name: ${{ github.ref_name }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload release assets
-        uses: softprops/action-gh-release@v1
-        with:
-          files: bin/*
+          files: release/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
